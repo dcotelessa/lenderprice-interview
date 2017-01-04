@@ -1,0 +1,51 @@
+/*!
+ *  Font Awesome 4.7.0 by @davegandy - http://fontawesome.io - @fontawesome
+ *  License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
+ */
+
+@import "variables";
+@import "mixins";
+@import "path";
+@import "core";
+@import "larger";
+@import "fixed-width";
+@import "list";
+@import "bordered-pulled";
+@import "animated";
+@import "rotated-flipped";
+@import "stacked";
+@import "icons";
+@import "screen-reader";
+
+$family-huge: 'Roboto Slab', serif;
+$primary: #7a7a7a;
+$job1: job-1 #FFEEEE;
+$job2: job-2 #FFDDDD;
+$job3: job-3 #FFCCCC;
+$job4: job-4 #FFBBBB;
+
+$jobs: $job1, $job2, $job3, $job4;
+
+@each $job in $jobs {
+  .box.#{nth($job, 1)} {
+    background-color: nth($job, 2);
+  }
+}
+
+  a {
+    color: $primary;
+  }
+
+.is-brand {
+  font-family: $family-huge;
+}
+
+.box {
+  .assignee-jobs li {
+    padding-top: 10px;
+
+    &:not(:last-child){
+      padding-bottom: 10px;
+    }
+  }
+}

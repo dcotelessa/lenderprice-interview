@@ -1,0 +1,146 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <base href="/">
+
+  <title>Assignment Manager</title>
+
+  <!--css file, combining bulma-->
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Slab" rel="stylesheet">
+  <link rel="stylesheet" href="/css/bulma.css">
+  <link rel="stylesheet" href="/css/app.css">
+
+  <!--angular-->
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.32/angular-route.min.js"></script>
+</head>
+
+<body ng-app="assignmentManagerApp" >
+  <div ng-controller="buttonsController">
+    <section class="hero is-primary is-bold">
+      <div class="hero-head">
+        <div class="container">
+          <nav class="nav">
+            <div class="nav-left">
+              <p class="nav-item is-brand title">
+                Assignment Navigation
+              </p>
+            </div>
+            <div class="nav-right nav-menu">
+              <span class="nav-item">
+                By David Cotelessa
+              </span>
+            </div>
+          </nav>
+        </div>
+      </div>
+      <div class="hero-body">
+        <div class="container">
+          <p class="control has-addons">
+            <a class="button" ng-class="loadingClasses('assignee')" ng-click="setList('assignee')"><span class="icon"><i class="fa fa-user-circle"></i></span><span>Assignee</span></a>
+            <a class="button" ng-class="loadingClasses('jobs')" ng-click="setList('jobs')"><span class="icon"><i class="fa fa-flag"></i></span><span>Jobs</span></a>
+          </p>
+        </div>
+      </div>
+      <div class="hero-foot">
+        <div class="container">
+          <div class="tabs is-toggle">
+            <ul>
+              <li ng-class="tabClasses('all')"><a ng-click="setFilter('all')">All</a></li>
+              <li ng-class="tabClasses('assigned')"><a ng-click="setFilter('assigned')"><span class="icon is-small"><i class="fa fa-flag"></i></span><span>Assigned</span></a></li>
+              <li ng-class="tabClasses('unassigned')"><a ng-click="setFilter('unassigned')"><span class="icon is-small"><i class="fa fa-chain-broken"></i></span><span>Unassigned</span></a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container" ng-controller="displayController">
+        <ul ng-class="isEmpty()">
+          <li>
+            <p class="control has-icon has-icon-left">
+              <input class="input" tdpe="text" placeholder="Search for assignee" value="" ng-model="q">
+              <i class="fa fa-search"></i>
+            </p>
+          </li>
+          <li ng-repeat="item in displayData | orderBy:'-__v' | filter: selectedFilter | filter:q as results">
+            <div class="box" id="{{item._id}}" ng-class="setClassbyJobQuantity({{item.__v}})">
+              <article class="media">
+                <div class="media-left">
+                  <span class="icon is-large">
+                    <i class="fa fa-user-circle"></i>
+                  </span>
+                </div>
+                <div class="media-content assignee-jobs">
+
+                    <nav class="level">
+                      <div class="level-left">
+                        <p class="level-item">
+                          <strong>{{item.name}}</strong> <small ng-if="item.__v">{{item.__v}} jobs</small>
+                        </p>
+                      </div>
+                      <div class="level-right">
+                        <a class="level-item collapsed">
+                          <span class="icon is-small"><i class="fa fa-chevron-up"></i></span>
+                        </a>
+                        <a class="level-item expanded">
+                          <span class="icon is-small"><i class="fa fa-chevron-down"></i></span>
+                        </a>
+                        <a class="level-item">
+                          <span class="icon is-small"><i class="fa fa-trash"></i></span>
+                        </a>
+                      </div>
+                    </nav>
+                    <ul>
+                      <li ng-repeat="job in item.jobs track by $index">
+                        <div class="box">
+                          {{job.summary || "No Summary."}}
+                          <nav class="level">
+                            <div class="level-left">
+                              <a class="level-item">
+                                <span class="icon is-small"><i class="fa fa-chain-broken"></i></span>
+                              </a>
+                              <a class="level-item">
+                                <span class="icon is-small"><i class="fa fa-check-circle"></i></span>
+                              </a>
+                            <a class="level-item">
+                              <span class="icon is-small"><i class="fa fa-trash"></i></span>
+                            </a>
+                          </div>
+                        </nav>
+                      </div>
+                    </li>
+                    <li>
+                      <nav class="level">
+                        <div class="level-left">
+                          <a><span class="icon is-small"><i class="fa fa-plus-circle"></i></span><span>Add job</span></a>
+                        </div>
+                      </nav>
+                    </li>
+                  </ul>
+                </div>
+              </article>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
+    <section class="section footer">
+      <div class="container">
+        <div class="content has-text-centered">
+          <p>&copy; 2016 David Cotelessa</p>
+        </div>
+      </div>
+    </section
+  </div>
+
+  <!--our angular app-->
+  <script src="app.js"></script>
+</body>
+</html>
