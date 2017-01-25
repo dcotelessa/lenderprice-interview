@@ -2343,10 +2343,28 @@
 a {
   color: #7a7a7a; }
 
+p {
+  word-break: break-all;
+  overflow: hidden; }
+
+.box {
+  padding: 20px; }
+  .box .assignee-jobs li {
+    padding-bottom: 10px; }
+
+@media (max-width: 440px) {
+  .jobs-tabs span:not(.icon) {
+    opacity: 0;
+    width: 10px; } }
+
 .is-brand {
   font-family: "Roboto Slab", serif; }
 
-.box .assignee-jobs li {
-  padding-top: 10px; }
-  .box .assignee-jobs li:not(:last-child) {
-    padding-bottom: 10px; }
+.input, .uniquename {
+  margin-bottom: 10px; }
+
+.media .media {
+  border-top: 0; }
+
+.tabs ul {
+  flex-wrap: wrap; }

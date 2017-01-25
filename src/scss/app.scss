@@ -13,20 +13,46 @@ $jobs: $job1, $job2, $job3, $job4;
   }
 }
 
-  a {
-    color: $primary;
+a {
+  color: $primary;
+}
+
+p {
+  word-break: break-all;
+  overflow: hidden;
+}
+
+
+.box {
+  padding: 20px;
+  .assignee-jobs {
+    li {
+      padding-bottom: 10px;
+    }
   }
+}
+
+ .jobs-tabs {
+   @media (max-width: 440px) {
+     span:not(.icon) {
+       opacity: 0;
+       width: 10px;
+      }
+  }
+}
 
 .is-brand {
   font-family: $family-huge;
 }
 
-.box {
-  .assignee-jobs li {
-    padding-top: 10px;
+.input,  .uniquename {
+  margin-bottom: 10px;
+}
 
-    &:not(:last-child){
-      padding-bottom: 10px;
-    }
-  }
+.media .media {
+  border-top: 0;
+}
+
+.tabs ul {
+  flex-wrap: wrap;
 }

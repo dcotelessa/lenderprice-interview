@@ -24,7 +24,7 @@ gulp.task('sass', function() {
         .pipe(replace('@charset "utf-8"', '/*@charset "utf-8"*/'))
         .pipe(gulp.dest('dist'))
         .pipe(sass({includePaths: ['node_modules/font-awesome/scss/'], errLogToConsole: true}))
-        .pipe(gulp.dest('dist/css'));
+        .pipe(gulp.dest('dist'));
 });
 
 // Concatenate & Minify JS
@@ -35,7 +35,7 @@ gulp.task('scripts', function() {
         .pipe(gulp.dest('dist'))
         .pipe(rename('app.min.js'))
         .pipe(uglify())
-        .pipe(gulp.dest('dist/js'));
+        .pipe(gulp.dest('dist'));
 });
 
 // Move Fonts
@@ -53,7 +53,7 @@ gulp.task('html', function() {
 // Move assets (no linting)
 gulp.task('css', function() {
     return gulp.src(['node_modules/bulma/css/bulma.css'])
-        .pipe(gulp.dest('dist/css'));
+        .pipe(gulp.dest('dist/vendor'));
 });
 
 // Watch Files For Changes

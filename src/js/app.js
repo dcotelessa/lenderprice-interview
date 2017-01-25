@@ -1,3 +1,5 @@
+var statusArr = ["New", "In Progress", "Completed"];
+
 angular.module('assignmentManagerApp', [
   'assignmentManagerApp.services'
 ])
@@ -16,85 +18,129 @@ angular.module('assignmentManagerApp', [
         return input.__v > 0;
       };
   })
+  .filter('in_progress', function() {
+    return function(input) {
+        return this.lists.jobs.data[this.lists.jobs.indx[input]].status === "In Progress";
+      };
+  })
+  .filter('completed', function() {
+    return function(input) {
+        return this.lists.jobs.data[this.lists.jobs.indx[input]].status === "Completed";
+      };
+  })
 .factory('listInfo', function(){
     var listdata = {
       lists: {
         assignee : {
           data: [],
           indx: {},
-          loading: true
+          loaded: false,
+          cleaned: false,
+          expanded: null,
+          filter: 'all'
         },
         jobs : {
           data: [],
           indx: {},
-          loading: true
+          cleaned: false,
+          loaded: false
         }
       },
-      selected: 'assignee',
-      filter: 'all',
-      jobsExpanded: false
+      filter: 'all'
     };
   return listdata;
 })
 .controller('buttonsController', function($scope, $rootScope, $filter, amAPI, listInfo) {
   function indxArr(arr){
     var _obj = {};
-    arr.reduce(function(prev,curr,idx,arr){
+    var curr;
+    for (var idx in arr) {
+      curr = arr[idx];
       if (!_obj[curr._id]){
         _obj[curr._id] = idx;
       }
-    });
+    }
     return _obj;
   }
 
-  function expandJobData(){
+  function cleanData(){
     /*this cleans up some of the data, as some of the data coming in is bad,
     it also adds an index to the jobs*/
-    if (listInfo.lists.jobs){
-      for (var all in listInfo.lists.assignee.data){
-        var data = listInfo.lists.assignee.data[all];
-        var jobs = data.jobs;
-        var _obj = {};
-        for (var job in jobs){
+    if (listInfo.lists.jobs.data.length > 0){
+      //clean job info
+      var _obj = {},
+        job, all, data;
+
+      //clean job array in assignee
+      for (all in listInfo.lists.assignee.data){
+        data = listInfo.lists.assignee.data[all];
+        _obj = {};
+        for (job in data.jobs){
           //no dupes
-          if (_obj[jobs[job]]){
-            jobs.splice(job, 1);
-          } else {
-            _obj[jobs[job]] = job;
-            var _joblist = listInfo.lists.jobs;
-            var indx = _joblist.indx[jobs[job]];
-            if (indx){
-              jobs[job] = Object.assign({}, {_id: jobs[job], summary: _joblist.data[indx].summary});
-            } else { //this doesn't exists in jobs
-              jobs.splice(job, 1);
-            }
+          if (data.jobs[job] === null || _obj[data.jobs[job]]){
+            data.jobs.splice(job, 1);
+          }
+
+          _obj[data.jobs[job]] = true;
+
+          if (listInfo.lists.jobs.indx[data.jobs[job]]){
+            listInfo.lists.jobs.data[listInfo.lists.jobs.indx[data.jobs[job]]].assigned = true;
           }
         }
         //reset __v
         data.__v = data.jobs.length;
+
       }
-      listInfo.lists.jobsExpanded = true;
+      listInfo.lists.assignee.cleaned = true;
     }
   }
 
-  $scope.loadingClasses = function(list){
-    return (listInfo.lists[list].loading ? "is-loading" : "")  + (list === listInfo.selected? "" : " is-link");
+  function cleanJobs(){
+    /*this cleans up some of the data, as some of the data coming in is bad,
+    it also adds an index to the jobs*/
+
+    if (listInfo.lists.jobs.data.length > 0){
+      //clean job info
+      var _obj = {},
+        status, checkstatus, job, all, data;
+      for (all in listInfo.lists.jobs.data){
+        job = listInfo.lists.jobs.data[all];
+        //no dupes
+        if (_obj[job._id]){
+          listInfo.lists.jobs.data.splice(job, 1);
+          listInfo.lists.jobs.indx[job._id] = undefined;
+        } else {
+          status = "New";
+
+          if (job.start_date){
+            if (job.end_date) {
+              status = "Completed";
+            } else {
+              status = "In Progress";
+            }
+          }
+
+          if (job.status) {
+              checkstatus = job.status.split(",").pop();
+              if (statusArr.indexOf(checkstatus) > -1){
+                status = checkstatus;
+              }
+          }
+          listInfo.lists.jobs.data[all].status = status; //set new status
+          _obj[job._id] = true;
+        }
+      }
+      listInfo.lists.jobs.cleaned = true;
+    }
+  }
+
+  $scope.isLoading = function(){
+    var dataLoaded = (listInfo.lists.assignee.loaded && listInfo.lists.jobs.loaded);
+    return !dataLoaded;
   };
 
   $scope.tabClasses = function(tab){
     return (listInfo.filter === tab ? "is-active" : "");
-  };
-
-  $scope.setList = function(list){
-    if (listInfo.selected !== list){
-      listInfo.selected = list;
-      $rootScope.$broadcast('displayChange', listInfo);
-    }
-  };
-
-  $scope.summaryJobs = function(id){
-    var jobInfo = $filter('filter')(listInfo.lists.jobs.data, {id: id})[0];
-    return jobInfo.summary;
   };
 
   $scope.setFilter = function(filtr){
@@ -107,25 +153,28 @@ angular.module('assignmentManagerApp', [
   amAPI.getAssignees().then(function(data) {
     listInfo.lists.assignee.indx = indxArr(data);
     listInfo.lists.assignee.data = data;
-    listInfo.lists.assignee.loading = false;
-    if (listInfo.selected === 'assignee'){
-      $rootScope.$broadcast('displayChange', listInfo);
+    listInfo.lists.assignee.loaded = true;
+    if (!listInfo.lists.jobs.cleaned){
+      cleanJobs();
     }
+    cleanData();
+    $rootScope.$broadcast('displayChange', listInfo);
   });
 
   amAPI.getJobs().then(function(data) {
     listInfo.lists.jobs.indx = indxArr(data);
     listInfo.lists.jobs.data = data;
-    listInfo.lists.jobs.loading = false;
-    expandJobData();
-    if (listInfo.selected === 'jobs'){
-      $rootScope.$broadcast('displayChange', listInfo);
+    listInfo.lists.jobs.loaded = true;
+    cleanJobs();
+
+    if (!listInfo.lists.assignee.cleaned){
+      cleanData();
     }
+    $rootScope.$broadcast('displayChange', listInfo);
   });
 
 })
-.controller('displayController', function($scope, $filter){
-  $scope.jobsExpanded = false;
+.controller('displayController', function($scope, $rootScope, $filter, listInfo){
   $scope.displayData = [];
   $scope.isEmpty = function(){
     return ($scope.displayData.length ? "" : "is-hidden");
@@ -136,12 +185,120 @@ angular.module('assignmentManagerApp', [
     return _num;
   };
 
+  $scope.tabJobClasses = function(tab){
+    return (listInfo.lists.assignee.filter === tab ? "is-active" : "");
+  };
+
+  $scope.setJobFilter = function(filtr){
+    if (listInfo.lists.assignee.filter !== filtr){
+      listInfo.lists.assignee.filter = filtr;
+      $rootScope.$broadcast('displayChange', listInfo);
+    }
+  };
+
+  $scope.uniqueName = function(q){
+    if (!q) {
+      return true;
+    }
+    // var some = listInfo.lists.assignee.data.some(function(e){
+    //   return (e.name === q);
+    // });
+    // return some;
+
+    return false;
+  };
+
+  $scope.jobData = function(item, data){
+    return listInfo.lists.jobs.data[listInfo.lists.jobs.indx[item]][data];
+  };
+
+  $scope.jobStatusSort = function (item){
+    var status = listInfo.lists.jobs.data[listInfo.lists.jobs.indx[item]].status;
+    return statusArr.indexOf(status);
+  };
+
+  $scope.collapseItem = function(item){
+    listInfo.lists.assignee.expanded = null;
+    $rootScope.$broadcast('displayChange', listInfo);
+  };
+
+  $scope.expandItem = function(item){
+    listInfo.lists.assignee.expanded = item;
+    $rootScope.$broadcast('displayChange', listInfo);
+  };
+
+  $scope.addAssignee = function(item){
+    console.log('addAssignee');
+  };
+
+  $scope.requestUpdateAssignee = function(item){
+    $scope.editingAssignee = true;
+  };
+
+  $scope.cancelUpdateAssignee = function(item){
+    $scope.editingAssignee = false;
+  };
+
+  $scope.updateAssignee = function(item){
+    console.log('updateAssignee');
+  };
+
+  $scope.deleteAssignee = function(item){
+    console.log('deleteAssignee');
+  };
+
+  $scope.addJob = function(){
+    console.log('addJob');
+  };
+
+  $scope.requestAddJob = function(){
+    $scope.addingJob = true;
+  };
+
+  $scope.cancelAddJob = function(){
+    $scope.addingJob = false;
+  };
+  
+  $scope.updateJob = function(){
+    console.log('updateJob');
+  };
+
+  $scope.requestUpdateJob = function(item){
+    $scope.editingJob = true;
+  };
+
+  $scope.cancelUpdateJob = function(item){
+    $scope.editingJob = false;
+  };
+
+  $scope.deleteJob = function(item){
+    console.log('deleteJob');
+  };
+
+  $scope.startJob = function(item){
+    console.log('startJob');
+  };
+
+  $scope.unassignJob = function(item){
+    console.log('unassignJob');
+  };
+
+  $scope.completeJob = function(item){
+    console.log('completeJob');
+  };
+
   //broadcasts
-  $scope.$on('displayChange', function(event, data){
+  $scope.$on('displayChange', function(event, data) {
+    $scope.addingAssignee = false;
+    $scope.editingAssignee = false;
+    $scope.addingJob = false;
+    $scope.editingJob = false;
     $scope.selectedFilter = $filter(data.filter);
-    $scope.displayData = data.lists[data.selected].data;
-    $scope.jobsExpanded = data.jobsExpanded;
-    console.log($scope.$$watchers);
+    $scope.selectedJobFilter = $filter(data.lists.assignee.filter).bind(data);
+    $scope.displayData = data.lists.assignee.data;
+    $scope.jobsData = data.lists.jobs.data;
+    $scope.assigneeExpanded = data.lists.assignee.expanded;
+    // console.log($scope.$$watchers.length);
   });
 });
 
