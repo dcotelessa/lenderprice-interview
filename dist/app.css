@@ -2348,6 +2348,7 @@ p {
   overflow: hidden; }
 
 .box {
+  margin-bottom: 5px;
   padding: 20px; }
   .box .assignee-jobs li {
     padding-bottom: 10px; }

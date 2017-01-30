@@ -18,7 +18,6 @@
   <!--angular-->
 
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.1/angular.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.32/angular-route.min.js"></script>
 </head>
 
 <body ng-app="assignmentManagerApp" >
@@ -43,11 +42,7 @@
       <div class="hero-foot">
         <div class="container">
           <div class="tabs is-toggle">
-            <ul>
-              <li ng-class="tabClasses('all')"><a ng-click="::setFilter('all')">All</a></li>
-              <li ng-class="tabClasses('assigned')"><a ng-click="::setFilter('assigned')"><span class="icon is-small"><i class="fa fa-flag"></i></span><span>Assigned</span></a></li>
-              <li ng-class="tabClasses('unassigned')"><a ng-click="::setFilter('unassigned')"><span class="icon is-small"><i class="fa fa-chain-broken"></i></span><span>Unassigned</span></a></li>
-              <li ng-if="isLoading()"><span class="icon is-medium"><i class="fa fa-spinner fa-pulse fa-fw"></i><span class="sr-only">Loading...</span></span></li>
+            <ul ng-include="assigneesLoadedStatus">
             </ul>
           </div>
         </div>
@@ -56,170 +51,30 @@
     </section>
     <section class="section">
       <div class="container" ng-controller="displayController">
-        <ul ng-class="isEmpty()">
+        <ul ng-cloak>
           <li>
-            <p class="control has-icon has-icon-left">
-              <input class="input q" type="text" placeholder="Search for assignee or create new assignee" value="" ng-model="q">
-              <i class="fa fa-search"></i>
+            <p>
+              {{q ? 'Would you like to create a new assignee ' + q + "?" : ""}}
             </p>
-
-            <div class="level uniquename" ng-hide="uniqueName(q)">
-              <div class="level-left">
-                <p>Would you like to create a new assignee {{q}}?</p>
+            <div class="media">
+              <div class="media-content">
+                <p class="control has-icon has-icon-left">
+                  <input class="input q" type="text" placeholder="Search for assignee or create new assignee" value="" ng-model="q">
+                  <i class="fa fa-search"></i>
+                </p>
               </div>
-              <div class="level-right">
-                <a ng-click="::addAssignee(q)">
+              <div class="media-right">
+                <a class="media-item button is-success" ng-click="addAssignee(q)"  ng-hide="typingName(q)">
                   <span class="icon is-small"><i class="fa fa-plus-circle"></i></span>
                   <span>Add Assignee</span>
                 </a>
               </div>
             </div>
           </li>
-          <li ng-repeat="item in filteredData = (displayData | orderBy:'-__v' | filter: selectedFilter | filter:q )">
+          <li ng-repeat="item in filteredData = (displayData | orderBy:'-__v' | filter: selectedAssigneeFilter | filter:q )">
             <div class="box" id="{{::item._id}}" ng-class="setClassbyJobQuantity({{::item.__v}})">
-              <article class="media">
-                <div class="media-left">
-                  <span class="icon is-large">
-                    <i class="fa fa-user-circle"></i>
-                  </span>
-                </div>
-                <div class="media-content assignee-jobs">
-                    <div class="level">
-                      <div class="level-left">
-                        <p class="level-item" ng-hide="editingAssignee">
-                          <strong>{{::item.name}}</strong> <small ng-if="item.__v">{{item.__v}} jobs</small>
-                        </p>
-                        <p class="level-item" ng-show="editingAssignee">
-                          <input class="input text a" type="text" placeholder="update assignee name" value="" ng-model="a"></input>
-                          <a class="button is-success" ng-click="::updateAssignee()">Create</a>
-                          <a class="button is-warning" ng-click="::cancelUpdateAssignee()">Cancel</a>
-
-                        </p>
-                      </div>
-                      <div class="level-right">
-                        <a class="level-item expanded" ng-if="assigneeExpanded==item._id" ng-click="::collapseItem(item._id)" title="collapse jobs">
-                          <span class="icon is-small"><i class="fa fa-chevron-up"></i></span>
-                        </a>
-                        <a class="level-item collapsed" ng-if="assigneeExpanded!=item._id" ng-click="::expandItem(item._id)" title="expand jobs">
-                          <span class="icon is-small"><i class="fa fa-chevron-down"></i></span>
-                        </a>
-                        <a class="level-item"  title="update assignee" ng-click:"::requestUpdateAssignee(item._id)">
-                          <span class="icon is-small"><i class="fa fa-edit"></i></span>
-                        </a>
-                        <a class="level-item"  title="trash assignee" ng-click:"::deleteAssignee(item._id)">
-                          <span class="icon is-small"><i class="fa fa-trash"></i></span>
-                        </a>
-                      </div>
-                    </div>
-                    <ul ng-if="assigneeExpanded==item._id">
-                      <li>
-                        <div class="level">
-                          <div class="level-left">
-                            <div class="tabs is-toggle jobs-tabs">
-                              <ul>
-                                <li ng-class="tabJobClasses('all')"><a ng-click="::setJobFilter('all')">All</a></li>
-                                <li ng-class="tabJobClasses('in_progress')"><a ng-click="::setJobFilter('in_progress')"><span class="icon is-small"><i class="fa fa-hourglass-start"></i></span><span>In Progress</span></a></li>
-                                <li ng-class="tabJobClasses('completed')"><a ng-click="::setJobFilter('completed')"><span class="icon is-small"><i class="fa fa-check-circle"></i></span><span>Completed</span></a></li>
-                              </ul>
-                            </div>
-                          </div>
-                          <div class="level-right">
-                            <a ng-click="::requestAddJob()" ng-hide="addingJob">
-                              <span class="icon is-small"><i class="fa fa-plus-circle"></i></span>
-                              <span>Add Job</span>
-                            </a>
-                          </div>
-                        </div>
-                      </li>
-                      <li ng-show="addingJob">
-                        <div class="box">
-
-                        <div class="level">
-                          <p><b>Add New Job:</b></p>
-                        </div>
-
-                        <div class="media">
-                          <div class="media-content">
-                          <input class="input text j" type="text" placeholder="Type name of new job or search for unnassigned jobs" value="" ng-model="j"></input>
-                          <textarea class="input textarea d" type="text" placeholder="Type description." ng-model="d" ></textarea>
-                          <a class="button is-success" ng-click="::addJob()">Create</a>
-                          <a class="button is-warning" ng-click="::cancelAddJob()">Cancel</a>
-                          </div>
-                        </div>
-                        <hr />
-                          <div class="level">
-                            <p><b>Unassigned Jobs:</b></p>
-                          </div>
-                          <ul>
-                            <li ng-repeat="ojob in otherJobs = (jobsData | filter: {'assigned': undefined} | filter:j )">
-                              <div class="box">
-                                <p><b>{{ojob.summary}}</b></p>
-                                <p>{{ojob.description}}</p>
-
-                                <div class="level">
-                                  <div class="level-left">
-                                    <a class="level-item" title="assign job" ng-click="::assignJob(o.job._id)">
-                                      <span class="icon is-small"><i class="fa fa-link"></i></span>
-                                    </a>
-                                    <a class="level-item"  title="update job" ng-click:"::requestUpdateJob(o.job._id)">
-                                      <span class="icon is-small"><i class="fa fa-edit"></i></span>
-                                    </a>
-                                  <a class="level-item" title="trash job" ng-click="::deleteJob(o.job._id)">
-                                    <span class="icon is-small"><i class="fa fa-trash"></i></span>
-                                  </a>
-                                </div>
-                              </div>
-                            </div>
-                            </li>
-                          </ul>
-                        </div>
-                      </li>
-                      <li ng-repeat="job in filteredJobs = (item.jobs | orderBy:jobStatusSort | filter: selectedJobFilter)" ng-hide="addingJob">
-                        <div class="box">
-                          <div class="media" ng-hide="editingJob">
-                            <div class="media-content">
-                              <p>
-                                <b>{{::jobData(job, "summary") || "No Summary."}}</b>
-                                <span ng-if="::jobData(job, 'status')=='In Progress'"> | Started {{::jobData(job, 'start_date') | date:'medium'}}</span>
-                                <span ng-if="::jobData(job, 'status')=='Completed'"> | Finished {{::jobData(job, 'end_date') | date:'medium'}}</span>
-                              </p>
-                              <p>
-                                {{::jobData(job, "description") || "No Description."}}
-                              </p>
-                            </div>
-                          <div>
-                          <div class="media" ng-show="editingJob">
-                            <div class="media-content">
-                            <input class="input text je" type="text" placeholder="Type name of new job or search for unnassigned jobs" value="" ng-model="je"></input>
-                            <textarea class="input textarea de" type="text" placeholder="Type description." ng-model="de" ></textarea>
-                            <a class="button is-success" ng-click="::updateJob()">Update</a>
-                            <a class="button is-warning" ng-click="::cancelUpdateJob()">Cancel</a>
-                            </div>
-                          </div>
-                          <div class="level">
-                            <div class="level-left">
-                              <a class="level-item" title="unassign job" ng-click="::unassignJob(job)" ng-if="::jobData(job, 'status')=='New' || jobData(job, 'status')=='In Progress'">
-                                <span class="icon is-small"><i class="fa fa-chain-broken"></i></span>
-                              </a>
-                              <a class="level-item" title="start job" ng-click="::startJob(job)" ng-if="::jobData(job, 'status')=='New'">
-                                <span class="icon is-small"><i class="fa fa-hourglass-start"></i></span>
-                              </a>
-                              <a class="level-item" title="completed job" ng-click="::completeJob(job)" ng-if="::jobData(job, 'status')=='In Progress'">
-                                <span class="icon is-small"><i class="fa fa-check-circle"></i></span>
-                              </a>
-                              <a class="level-item"  title="update job" ng-click:"::requestUpdateJob(job)">
-                                <span class="icon is-small"><i class="fa fa-edit"></i></span>
-                              </a>
-                            <a class="level-item" title="trash job" ng-click="::deleteJob(job)">
-                              <span class="icon is-small"><i class="fa fa-trash"></i></span>
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </article>
+              <ng-include src="item.template">
+              </ng-include>
             </div>
           </li>
         </ul>
@@ -231,8 +86,259 @@
           <p>&copy; 2016 David Cotelessa</p>
         </div>
       </div>
-    </section
+    </section>
   </div>
+
+  <script type="text/ng-template" id="assigneesNotLoaded">
+    <li><span class="icon is-medium"><i class="fa fa-spinner fa-pulse fa-fw"></i><span class="sr-only">Loading Asssignees...</span></span></li>
+  </script>
+
+  <script type="text/ng-template" id="assigneesLoaded">
+    <li ng-class="tabClasses('all')"><a ng-click="setFilter('all')">All</a></li>
+    <li ng-class="tabClasses('assigned')"><a ng-click="setFilter('assigned')"><span class="icon is-small"><i class="fa fa-flag"></i></span><span>Assigned</span></a></li>
+    <li ng-class="tabClasses('unassigned')"><a ng-click="setFilter('unassigned')"><span class="icon is-small"><i class="fa fa-chain-broken"></i></span><span>Unassigned</span></a></li>
+  </script>
+
+  <script type="text/ng-template" id="notLoaded">
+    <span class="icon is-medium"><i class="fa fa-spinner fa-pulse fa-fw"></i><span class="sr-only">Loading...</span></span>
+  </script>
+
+  <script type="text/ng-template" id="displayAssignee">
+    <article class="media">
+      <div class="media-left">
+        <span class="icon is-large">
+          <i class="fa fa-user-circle"></i>
+        </span>
+        <span class="level-item">
+          <strong>{{::item.name}}</strong> <small>{{item.__v? item.__v + " jobs" : ""}}</small>
+        </span>
+      </div>
+      <div class="media-content assignee-jobs">
+          <div class="level">
+            <div class="level-left">
+            </div>
+            <div class="level-right">
+              <a class="level-item collapsed" ng-click="setAssigneeStatus('expandAssignee', item._id)" title="expand jobs">
+                <span class="icon is-small"><i class="fa fa-chevron-down"></i></span>
+              </a>
+              <a class="level-item" title="update assignee" ng-click="setAssigneeStatus('editAssignee', item._id)">
+                <span class="icon is-small"><i class="fa fa-edit"></i></span>
+              </a>
+              <a class="level-item" title="trash assignee" ng-click="deleteAssignee(item._id)">
+                <span class="icon is-small"><i class="fa fa-trash"></i></span>
+              </a>
+            </div>
+          </div>
+      </div>
+    </article>
+  </script>
+
+  <script type="text/ng-template" id="expandAssignee">
+    <article class="media">
+      <div class="media-left">
+        <span class="icon is-large">
+          <i class="fa fa-user-circle"></i>
+        </span>
+        <span class="level-item">
+          <strong>{{::item.name}}</strong> <small>{{item.__v? item.__v + " jobs" : ""}}</small>
+        </span>
+      </div>
+      <div class="media-content assignee-jobs">
+          <div class="level">
+            <div class="level-left">
+            </div>
+            <div class="level-right">
+            <a class="level-item expanded" ng-click="setAssigneeStatus('displayAssignee', item._id)" title="collapse jobs">
+              <span class="icon is-small"><i class="fa fa-chevron-up"></i></span>
+            </a>
+            <a class="level-item" title="update assignee" ng-click="setAssigneeStatus('editAssignee', item._id)">
+              <span class="icon is-small"><i class="fa fa-edit"></i></span>
+            </a>
+            <a class="level-item" title="trash assignee" ng-click="deleteAssignee(item._id)">
+              <span class="icon is-small"><i class="fa fa-trash"></i></span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+    <ul ng-include="jobsStatus">
+    </ul>
+  </script>
+
+  <script type="text/ng-template" id="editAssignee">
+    <article class="media">
+      <div class="media-left">
+        <span class="icon is-large">
+          <i class="fa fa-user-circle"></i>
+        </span>
+        <span class="level-item">
+          <strong>{{::item.name}}</strong> <small>{{item.__v? item.__v + " jobs" : ""}}</small>
+        </span>
+      </div>
+      <div class="media-content assignee-jobs">
+          <div class="level">
+            <div class="level-left">
+            </div>
+            <div class="level-right">
+              <a class="level-item collapsed" ng-click="setAssigneeStatus('expandAssignee', item._id)" title="expand jobs">
+                <span class="icon is-small"><i class="fa fa-chevron-down"></i></span>
+              </a>
+              <a class="level-item" title="trash assignee" ng-click="deleteAssignee(item._id)">
+                <span class="icon is-small"><i class="fa fa-trash"></i></span>
+              </a>
+            </div>
+          </div>
+      </div>
+    </article>
+    <div class="media">
+      <div class="media-content">
+      <input class="input text a" type="text" placeholder="Update assignee name" value="" ng-model="a"></input>
+      </div>
+      <div class="media-right">
+        <a class="media-item button is-success" ng-click="updateAssignee(item._id, a)">Update Name</a>
+        <a class="media-item button is-warning" ng-click="setAssigneeStatus('displayAssignee')">Cancel</a>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/ng-template" id="displayJobs">
+    <li>
+      <div class="level">
+        <div class="level-left">
+          <div class="tabs is-toggle jobs-tabs">
+            <ul>
+              <li ng-class="tabJobClasses('all')"><a ng-click="setJobFilter('all')">All</a></li>
+              <li ng-class="tabJobClasses('in_progress')"><a ng-click="setJobFilter('in_progress')"><span class="icon is-small"><i class="fa fa-hourglass-start"></i></span><span>In Progress</span></a></li>
+              <li ng-class="tabJobClasses('completed')"><a ng-click="setJobFilter('completed')"><span class="icon is-small"><i class="fa fa-check-circle"></i></span><span>Completed</span></a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="level-right">
+          <a class="button is-success" ng-click="setJobsStatus('addJob')">
+            <span class="icon is-small"><i class="fa fa-plus-circle"></i></span>
+            <span>Add Job</span>
+          </a>
+        </div>
+      </div>
+    </li>
+    <li ng-repeat="job in filteredJobs = (item.jobs | orderBy:jobStatusSort | filter: selectedJobFilter)">
+      <div class="box">
+        <div class="media">
+          <div class="media-content">
+              <p>
+                <b>{{::jobData(job, "summary") || "No Summary."}}</b>
+                 <ng-include src="jobData(job, 'status')[0]"></ng-include>
+              </p>
+              <p>
+                {{::jobData(job, "description") || "No Description."}}
+              </p>
+          </div>
+        </div>
+        <div class="level">
+          <div class="level-left">
+            <a class="level-item" title="unassign job" ng-click="unassignJob(job)" ng-if="::jobData(job, 'status')[0]=='New' || jobData(job, 'status')[0]=='In Progress'">
+              <span class="icon is-small"><i class="fa fa-chain-broken"></i></span>
+            </a>
+            <a class="level-item" title="start job" ng-click="startJob(job)" ng-if="::jobData(job, 'status')[0]=='New'">
+              <span class="icon is-small"><i class="fa fa-hourglass-start"></i></span>
+            </a>
+            <a class="level-item" title="completed job" ng-click="completeJob(job)" ng-if="::jobData(job, 'status')[0]=='In Progress'">
+              <span class="icon is-small"><i class="fa fa-check-circle"></i></span>
+            </a>
+            <a class="level-item"  title="edit job" ng-click="setJobsStatus('addJob', job)">
+              <span class="icon is-small"><i class="fa fa-edit"></i></span>
+            </a>
+          <a class="level-item" title="trash job" ng-click="deleteJob(job)">
+            <span class="icon is-small"><i class="fa fa-trash"></i></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </li>
+  </script>
+
+  <script type="text/ng-template" id="addJob">
+    <li>
+      <div class="box">
+        <div class="level">
+          <div class="level-left">
+            <p><b>Add New Job:</b></p>
+          </div>
+          <div class="level-right">
+            <a class="button is-success" ng-click="addJob(j,d)">Add Job</a>
+            <a class="button is-warning" ng-click="setJobsStatus(previousStatus)">Cancel</a>
+          </div>
+        </div>
+
+      <div class="media">
+        <div class="media-content">
+        <input class="input text j" type="text" placeholder="Type name of new job or search for unnassigned jobs" value="" ng-model="j"></input>
+        <textarea class="input textarea d" type="text" placeholder="Type description." ng-model="d" ></textarea>
+        </div>
+      </div>
+      <hr />
+        <div class="level">
+          <p><b>Unassigned Jobs:</b> (You can also assign these)</p>
+        </div>
+        <ul>
+          <li ng-repeat="ojob in otherJobs = (jobsData | filter: {'assigned': undefined} | filter:j )">
+            <div class="box">
+              <p><b>{{ojob.summary}}</b></p>
+              <p>{{ojob.description}}</p>
+
+              <div class="level">
+                <div class="level-left">
+                  <a class="level-item" title="assign job" ng-click="assignJob(item._id, ojob._id)">
+                    <span class="icon is-small"><i class="fa fa-link"></i></span>
+                  </a>
+                  <a class="level-item"  title="edit job" ng-click="setJobsStatus('editJob', ojob._id)">
+                    <span class="icon is-small"><i class="fa fa-edit"></i></span>
+                  </a>
+                <a class="level-item" title="trash job" ng-click="deleteJob(ojob._id)">
+                  <span class="icon is-small"><i class="fa fa-trash"></i></span>
+                </a>
+              </div>
+            </div>
+          </div>
+          </li>
+        </ul>
+      </div>
+    </li>
+  </script>
+
+  <script type="text/ng-template" id="editJob">
+    <li>
+      <div class="box">
+        <div class="level">
+          <div class="level-left">
+            <p><b>Edit Job:</b> {{::editingJob.summary}}</p>
+          </div>
+          <div class="level-right">
+            <a class="button is-success" ng-click="updateJob(editingJob, s, d)">Edit Job</a>
+            <a class="button is-warning" ng-click="setJobsStatus(previousStatus)">Cancel</a>
+          </div>
+        </div>
+
+      <div class="media">
+        <div class="media-content">
+        <input class="input text s" type="text" ng-value="::editingJob.summary" ng-model="s"></input>
+        <textarea class="input textarea d" type="text" ng-model="d" ng-value="::editingJob.description"></textarea>
+        </div>
+      </div>
+      </div>
+    </li>
+  </script>
+
+  <script type="text/ng-template" id="New">
+  </script>
+
+  <script type="text/ng-template" id="In_Progress">
+    <span> | Started {{::jobData(job, 'start_date') | date:'medium'}}</span>
+    </script>
+
+  <script type="text/ng-template" id="Completed">
+    <span> | Finished {{::jobData(job, 'end_date') | date:'medium'}}</span>
+  </script>
 
   <!--our angular app-->
   <script src="app.js"></script>
